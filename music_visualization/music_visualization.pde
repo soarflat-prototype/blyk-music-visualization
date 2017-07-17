@@ -5,17 +5,18 @@ Minim minim;
 AudioPlayer player;
 AudioMetaData meta;
 BeatDetect beat;
-int radius = 200;
-float rad = 70;
+int RADIUS = 200;
+float radius = RADIUS;
+float CENTER_CIRCLE_RADIUS = 70;
+float centerCircleRadius = CENTER_CIRCLE_RADIUS;
 
 void setup() {
-    size(displayWidth, displayHeight);
-    // size(400, 300);
+    size(800, 800);
     minim = new Minim(this);
     beat = new BeatDetect();
     player = minim.loadFile("sample.mp3");
-    meta = player.getMetaData();
     player.loop();
+    player.setGain(-10);
     background(-1);
     // カーソルを非表示にする
     noCursor();
@@ -53,18 +54,20 @@ void draw() {
 
     // 塗りつぶしの色を設定
     fill(-1, 10);
+
+    radius = RADIUS * player.left.level() * pow(1.2, 3) + 150;
+    centerCircleRadius = CENTER_CIRCLE_RADIUS * player.right.level() * pow(1.5, 3) + 50;
     
     // ビートが検出されたらradを乗算する
-    if (beat.isOnset()) rad = rad * 0.9;
-    else rad = 70;
-    ellipse(0, 0, 2 * rad, 2 * rad);
+    // if (beat.isOnset()) centerCircleRadius = centerCircleRadius * 0.9;
+    // else centerCircleRadius = 70;
+    ellipse(0, 0, 2 * centerCircleRadius, 2 * centerCircleRadius);
 
     // サウンドオブジェクトのバッファサイズを取得
     int bufferSize = player.bufferSize();
 
     // 線の色を設定
     stroke(-1);
-
 
     /** 
      * 円弧上に波形データを描画
@@ -96,8 +99,9 @@ void draw() {
         float sample = (i < bufferSize / 2)
             ? player.left.get(i) 
             : player.right.get(i);
-        float x2 = (radius + sample * 100) * cos(radian);
-        float y2 = (radius + sample * 100) * sin(radian);
+        if (sample < 0) sample = 0;
+        float x2 = (radius + (sample * 100)) * cos(radian);
+        float y2 = (radius + (sample * 100)) * sin(radian);
 
         line(x, y, x2, y2);
     }
@@ -143,9 +147,21 @@ void draw() {
         float sample = (i < bufferSize / 2)
             ? player.left.get(i) 
             : player.right.get(i);
+
+        /** 
+         * sampleが0未満の場合、radiusより内側に描画がされてしまう
+         *
+         * 例えばradiusが200の時にsampleをスケーリングした値を加算して
+         * その値にcos(radians(0))を乗算してx座標を求めたいとする
+         * x = (200 + (sample * 200)) * cos(radians(0));
+         * 
+         * sampleが1の場合、xは400になり、sampleが-1の場合xは0になる
+         * そのため、sampleが0未満の場合x座標がradiusが内側になってしまう
+         * 今回はそれをしたくないため、sampleが0未満の場合、0にする
+         */
         if (sample < 0) sample = 0;
-        float x2 = (radius + sample * 200) * cos(radian);
-        float y2 = (radius + sample * 200) * sin(radian);
+        float x2 = (radius + (sample * 200)) * cos(radian);
+        float y2 = (radius + (sample * 200)) * sin(radian);
 
         pushStyle();
         stroke(-1);
