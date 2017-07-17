@@ -93,8 +93,11 @@ void draw() {
          * 波形データを見え易く描画するためにはwindowの大きさに応じてスケーリングする必要がある
          * 今回、スケーリングのために100を乗算している
          */
-        float x2 = (radius + player.left.get(i) * 100) * cos(radian);
-        float y2 = (radius + player.left.get(i) * 100) * sin(radian);
+        float sample = (i < bufferSize / 2)
+            ? player.left.get(i) 
+            : player.right.get(i);
+        float x2 = (radius + sample * 100) * cos(radian);
+        float y2 = (radius + sample * 100) * sin(radian);
 
         line(x, y, x2, y2);
     }
@@ -105,8 +108,11 @@ void draw() {
 
     for (int i = 0; i < bufferSize; i += 30) {
         float radian = 2 * PI * i / bufferSize;
-        float x2 = (radius + player.left.get(i) * 100) * cos(radian);
-        float y2 = (radius + player.left.get(i) * 100) * sin(radian);
+        float sample = (i < bufferSize / 2)
+            ? player.left.get(i) 
+            : player.right.get(i);
+        float x2 = (radius + sample * 100) * cos(radian);
+        float y2 = (radius + sample * 100) * sin(radian);
 
         vertex(x2, y2);
         pushStyle();
@@ -117,4 +123,34 @@ void draw() {
     }
 
     endShape();
+
+    for (int i = 0; i < bufferSize; i += 5) {
+         /** 
+         * bufferSizeとiからラジアンを算出する
+         * ラジアン = 2 * PI * (度数 / 360)
+         * なので
+         * ラジアン = 2 * PI * (i / bufferSize)
+         */
+        float radian = 2 * PI * i / bufferSize;
+
+        /** 
+         * pointを描画するx, y座標を取得
+         * radiusにスケーリングした波形データを加算する
+         * player.left.get()とplayer.right.get()によって返される値は-1と1の間にあり
+         * 波形データを見え易く描画するためにはwindowの大きさに応じてスケーリングする必要がある
+         * 今回、スケーリングのために200を乗算している
+         */
+        float sample = (i < bufferSize / 2)
+            ? player.left.get(i) 
+            : player.right.get(i);
+        if (sample < 0) sample = 0;
+        float x2 = (radius + sample * 200) * cos(radian);
+        float y2 = (radius + sample * 200) * sin(radian);
+
+        pushStyle();
+        stroke(-1);
+        strokeWeight(2);
+        point(x2, y2);
+        popStyle();
+    }
 }
